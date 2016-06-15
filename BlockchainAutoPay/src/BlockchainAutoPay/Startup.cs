@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using BlockchainAutoPay.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 
 namespace BlockchainAutoPay
 {
@@ -53,6 +54,37 @@ namespace BlockchainAutoPay
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
+            // Add cookie middleware
+            app.UseCookieAuthentication(new CookieAuthenticationOptions
+            {
+                AutomaticAuthenticate = true,
+                AutomaticChallenge = true,
+                LoginPath = new PathString("/login"),
+                LogoutPath = new PathString("/logout")
+            });
+
+            // Add the OAuth2 middleware
+            app.UseOAuthAuthentication(new OAuthOptions
+            {
+                AuthenticationScheme = "Coinbase",
+
+                ClientId = Configuration["coinbase:clientId"],
+                ClientSecret = Configuration["coinbase:clientSecret"],
+
+                CallbackPath = new PathString("/signin-coinbase"),
+
+                AuthorizationEndpoint = "https://sandbox.coinbase.com/oauth/authorize",
+                TokenEndpoint = "http://sandbox.coinbase.com/oauth/token",
+                // PROBABLY the URL used after user authenticated
+                UserInformationEndpoint = "https://sandbox.coinbase.com/v2/user",
+                // in the example, this was written like: "https://sandbox.coinbase.com/v2/user/(id,name,username)"
+
+                // Scope set to just user info for now
+                Scope = { "user" }
+
+
+            });
+
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
