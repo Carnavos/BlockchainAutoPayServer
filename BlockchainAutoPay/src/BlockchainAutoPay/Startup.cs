@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using BlockchainAutoPay.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Authentication;
 
 namespace BlockchainAutoPay
 {
@@ -82,7 +83,29 @@ namespace BlockchainAutoPay
                 // Scope set to just user info for now
                 Scope = { "user" }
 
+            });
 
+            // Listen for requests on the /login path, and issue a challenge to log in with Coinbase middleware
+            app.Map("/login", builder =>
+            {
+                builder.Run(async context =>
+                {
+                    // Return a challenge to invoke the Coinbase authentication scheme
+                    await context.Authentication.ChallengeAsync("Coinbase", properties: new AuthenticationProperties() { RedirectUri = "/" });
+                });
+            });
+
+            // Listen for requests on the /logout path, and sign the user out
+            app.Map("/logout", builder =>
+            {
+                builder.Run(async context =>
+                {
+                    // Sign the user out of the authentication middleware (i.e. it will clear the Auth cookie)
+                    await context.Authentication.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+                    // Redirect the user to the home page after signing out
+                    context.Response.Redirect("/");
+                });
             });
 
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
