@@ -75,13 +75,13 @@ namespace BlockchainAutoPay
                 CallbackPath = new PathString("/signin-coinbase"),
 
                 AuthorizationEndpoint = "https://sandbox.coinbase.com/oauth/authorize",
-                TokenEndpoint = "http://sandbox.coinbase.com/oauth/token",
+                TokenEndpoint = "https://sandbox.coinbase.com/oauth/token"
                 // PROBABLY the URL used after user authenticated
-                UserInformationEndpoint = "https://sandbox.coinbase.com/v2/user",
+                //UserInformationEndpoint = "https://sandbox.coinbase.com/v2/user",
                 // in the example, this was written like: "https://sandbox.coinbase.com/v2/user/(id,name,username)"
 
                 // Scope set to just user info for now
-                Scope = { "user" }
+                // Scope = { "user" }
 
             });
 
