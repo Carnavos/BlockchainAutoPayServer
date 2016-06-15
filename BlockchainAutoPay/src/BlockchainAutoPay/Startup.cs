@@ -12,6 +12,11 @@ using BlockchainAutoPay.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using Newtonsoft.Json.Linq;
+using System.Security.Claims;
 
 namespace BlockchainAutoPay
 {
@@ -74,14 +79,43 @@ namespace BlockchainAutoPay
 
                 CallbackPath = new PathString("/signin-coinbase"),
 
+
                 AuthorizationEndpoint = "https://sandbox.coinbase.com/oauth/authorize",
-                TokenEndpoint = "https://sandbox.coinbase.com/oauth/token"
-                // PROBABLY the URL used after user authenticated
-                //UserInformationEndpoint = "https://sandbox.coinbase.com/v2/user",
-                // in the example, this was written like: "https://sandbox.coinbase.com/v2/user/(id,name,username)"
+                TokenEndpoint = "https://sandbox.coinbase.com/oauth/token",
+                // the URL accessed used after user authenticated, used to store user object
+                UserInformationEndpoint = "https://api.sandbox.coinbase.com/v2/user",
+                // in the example, this was written like: "https://sandbox.coinbase.com/v2/user/(id,name,username)" to store fields as "claims"
 
                 // Scope set to just user info for now
                 // Scope = { "user" }
+
+                Events = new OAuthEvents
+                {
+                    // The OnCreatingTicket event is called after the user has been authenticated and the OAuth middleware has
+                    // created an auth ticket. We need to manually call the UserInformationEndpoint to retrieve the user's information,
+                    // parse the resulting JSON to extract the relevant information, and add the correct claims.
+                    OnCreatingTicket = async context =>
+                    {
+                        // Retrieve user info
+                        var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+                        request.Headers.Add("x-li-format", "json"); // Tell Coinbase we want the result in JSON, otherwise it will return XML
+
+                        var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
+                        response.EnsureSuccessStatusCode();
+
+                        // Extract the user info object
+                        var user = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+                        // Placeholder "Claim" section
+                        // Add the Name Identifier claim
+                        //var userId = user.Value<string>("id");
+                        //if (!string.IsNullOrEmpty(userId))
+                        //{
+                        //    context.Identity.AddClaim(new Claim(ClaimTypes.Name))
+                        //}
+                    }
+                }
 
             });
 
