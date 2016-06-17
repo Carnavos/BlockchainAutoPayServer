@@ -106,14 +106,43 @@ namespace BlockchainAutoPay
 
                         // Extract the user info object
                         var user = JObject.Parse(await response.Content.ReadAsStringAsync());
+                        // import database context
+                        // add user object into currentUser table
+                        // angular starts with GET request to currentUser table for user info
+
+                        var test2 = user["data"];
+                        var userId = user["data"]["id"].ToString();
+
+                        // BCAPContext BCAP = new BCAPContext(new DbContextOptionsBuilder<BCAPContext>().Options);
+
+                        var optionsBuilder = new DbContextOptionsBuilder<BCAPContext>();
+                        optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=BCAPDB;Trusted_Connection=True;");
+                        BCAPContext BCAP = new BCAPContext(optionsBuilder.Options);
+
+                        BCAP.CurrentCustomer.Add(new CurrentCustomer {
+                            CustomerId = userId,
+                            Data = test2.ToString()
+                        });
+                        BCAP.SaveChanges();
+
 
                         // Placeholder "Claim" section
                         // Add the Name Identifier claim
-                        //var userId = user.Value<string>("id");
-                        //if (!string.IsNullOrEmpty(userId))
-                        //{
-                        //    context.Identity.AddClaim(new Claim(ClaimTypes.Name))
-                        //}
+                        if (!string.IsNullOrEmpty(userId))
+                        {
+                            context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userId, ClaimValueTypes.String, context.Options.ClaimsIssuer));
+                        }
+
+                        // Add the Name claim
+                        var formattedName = user["data"]["name"].ToString();
+                        // var formattedName = user.Value<string>("formattedName");
+                        if (!string.IsNullOrEmpty(formattedName))
+                        {
+                            context.Identity.AddClaim(new Claim(ClaimTypes.Name, formattedName, ClaimValueTypes.String, context.Options.ClaimsIssuer));
+                        }
+
+                        context.Identity.AddClaim(new Claim("urn:token:coinbase", context.AccessToken));
+
                     }
                 }
 
@@ -125,7 +154,8 @@ namespace BlockchainAutoPay
                 builder.Run(async context =>
                 {
                     // Return a challenge to invoke the Coinbase authentication scheme
-                    await context.Authentication.ChallengeAsync("Coinbase", properties: new AuthenticationProperties() { RedirectUri = "/" });
+                    // await context.Authentication.ChallengeAsync("Coinbase", properties: new AuthenticationProperties() { RedirectUri = "/" });
+                    await context.Authentication.ChallengeAsync("Coinbase", properties: new AuthenticationProperties() { RedirectUri = "http://localhost:8080" });
                 });
             });
 
