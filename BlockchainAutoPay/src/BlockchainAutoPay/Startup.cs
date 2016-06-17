@@ -106,24 +106,22 @@ namespace BlockchainAutoPay
 
                         // Extract the user info object
                         var user = JObject.Parse(await response.Content.ReadAsStringAsync());
-                        // import database context
-                        // add user object into currentUser table
-                        // angular starts with GET request to currentUser table for user info
 
-                        var test2 = user["data"];
+                        var fullData = user["data"];
                         var userId = user["data"]["id"].ToString();
 
-                        // BCAPContext BCAP = new BCAPContext(new DbContextOptionsBuilder<BCAPContext>().Options);
-
+                        // import database context
                         var optionsBuilder = new DbContextOptionsBuilder<BCAPContext>();
                         optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=BCAPDB;Trusted_Connection=True;");
                         BCAPContext BCAP = new BCAPContext(optionsBuilder.Options);
 
+                        // add user object into currentUser table
                         BCAP.CurrentCustomer.Add(new CurrentCustomer {
                             CustomerId = userId,
-                            Data = test2.ToString()
+                            Data = fullData.ToString()
                         });
                         BCAP.SaveChanges();
+                        // angular starts with GET request to currentUser table for user info
 
 
                         // Placeholder "Claim" section

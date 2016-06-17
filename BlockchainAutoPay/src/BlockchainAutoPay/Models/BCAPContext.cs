@@ -13,6 +13,7 @@ namespace BlockchainAutoPay.Models
         { }
 
         public DbSet<Customer> Customer { get; set; }
+        public DbSet<CurrentCustomer> CurrentCustomer { get; set; }
         public DbSet<Autopay> Autopay { get; set; }
         public DbSet<Transaction> Transaction { get; set; }
     }
