@@ -11,5 +11,6 @@ namespace BlockchainAutoPay.Models
         [Key]
         public string CustomerId { get; set; }
         public string Data { get; set; }
+        public string AccessToken { get; set; }
     }
 }
