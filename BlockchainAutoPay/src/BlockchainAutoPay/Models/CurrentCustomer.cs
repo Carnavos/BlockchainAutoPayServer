@@ -10,6 +10,8 @@ namespace BlockchainAutoPay.Models
     {
         [Key]
         public string CustomerId { get; set; }
+        public string FullName { get; set; }
+        public string ProfilePicUrl { get; internal set; }
         public string Data { get; set; }
         public string AccessToken { get; set; }
     }

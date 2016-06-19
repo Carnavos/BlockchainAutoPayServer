@@ -51,6 +51,17 @@ namespace BlockchainAutoPay
             var connection = @"Server=(localdb)\mssqllocaldb;Database=BCAPDB;Trusted_Connection=True;";
             services.AddDbContext<BCAPContext>(options => options.UseSqlServer(connection));
 
+            // CORS Policy: Allow any head and any method on a request from local host development machine
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowDevelopmentEnvironment",
+                    // builder => builder.WithOrigins("http://localhost:8080")
+                    builder => builder
+                    .AllowAnyOrigin() // any access allowed (commented out specific port permission above)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
+            });
+
             // Add framework services.
             services.AddApplicationInsightsTelemetry(Configuration);
 
@@ -87,7 +98,8 @@ namespace BlockchainAutoPay
                 // in the example, this was written like: "https://sandbox.coinbase.com/v2/user/(id,name,username)" to store fields as "claims"
 
                 // Scope set to just user info for now
-                // Scope = { "user" }
+                // scope=user%20addresses%20balance%20buttons%20contacts%20recurring_payments%20transactions
+                Scope = { "user", "addresses", "balance", "contacts", "recurring_payments", "transactions", "wallet:accounts:read" },
 
                 Events = new OAuthEvents
                 {
@@ -107,19 +119,42 @@ namespace BlockchainAutoPay
                         // Extract the user info object
                         var user = JObject.Parse(await response.Content.ReadAsStringAsync());
 
+                        // testing JObject/JToken variations
+                        string fullName = (string)user["data"]["name"];
+                        string gravatar = (string)user["data"]["avatar_url"];
+                        JToken tData = user["data"];
+
+
                         var fullData = user["data"];
-                        var userId = user["data"]["id"].ToString();
+                        string userId = (string)user["data"]["id"];
+                        // var userId = user["data"]["id"].ToObject();
 
                         // import database context
                         var optionsBuilder = new DbContextOptionsBuilder<BCAPContext>();
                         optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=BCAPDB;Trusted_Connection=True;");
                         BCAPContext BCAP = new BCAPContext(optionsBuilder.Options);
 
-                        // add user object into currentUser table
-                        BCAP.CurrentCustomer.Add(new CurrentCustomer {
-                            CustomerId = userId,
-                            Data = fullData.ToString()
-                        });
+                        var currentUser = BCAP.CurrentCustomer.FirstOrDefault();
+                        // add user object into currentUser table if not present, else if present, updates to currently pulled user info
+                        if (currentUser == null)
+                        {
+                            BCAP.CurrentCustomer.Add(new CurrentCustomer
+                            {
+                                CustomerId = userId,
+                                FullName = fullName,
+                                ProfilePicUrl = gravatar,
+                                // Data = (string)fullData,
+                                Data = fullData.ToString(),
+                                AccessToken = context.AccessToken
+                            });
+                        } else
+                        {
+                            currentUser.CustomerId = userId;
+                            currentUser.FullName = fullName;
+                            currentUser.ProfilePicUrl = gravatar;
+                            currentUser.Data = fullData.ToString();
+                            currentUser.AccessToken = context.AccessToken;
+                        }
                         BCAP.SaveChanges();
                         // angular starts with GET request to currentUser table for user info
 
@@ -153,7 +188,7 @@ namespace BlockchainAutoPay
                 {
                     // Return a challenge to invoke the Coinbase authentication scheme
                     // await context.Authentication.ChallengeAsync("Coinbase", properties: new AuthenticationProperties() { RedirectUri = "/" });
-                    await context.Authentication.ChallengeAsync("Coinbase", properties: new AuthenticationProperties() { RedirectUri = "http://localhost:8080" });
+                    await context.Authentication.ChallengeAsync("Coinbase", properties: new AuthenticationProperties() { RedirectUri = "http://localhost:8080/#/register" });
                 });
             });
 
