@@ -8,6 +8,9 @@ namespace BlockchainAutoPay.Models
 {
     public class CurrentCustomer
     {
+        // local id to be used within app tracking
+        // public int BCAPId { get; set; }
+        // Coinbase id (alphanumeric combo) to be used for API calls
         [Key]
         public string CustomerId { get; set; }
         public string FullName { get; set; }

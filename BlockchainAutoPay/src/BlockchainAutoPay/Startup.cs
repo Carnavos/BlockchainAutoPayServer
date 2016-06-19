@@ -134,7 +134,9 @@ namespace BlockchainAutoPay
                         optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=BCAPDB;Trusted_Connection=True;");
                         BCAPContext BCAP = new BCAPContext(optionsBuilder.Options);
 
+                        // Query the singular entry in current customer table
                         var currentUser = BCAP.CurrentCustomer.FirstOrDefault();
+
                         // add user object into currentUser table if not present, else if present, updates to currently pulled user info
                         if (currentUser == null)
                         {
@@ -143,17 +145,29 @@ namespace BlockchainAutoPay
                                 CustomerId = userId,
                                 FullName = fullName,
                                 ProfilePicUrl = gravatar,
-                                // Data = (string)fullData,
                                 Data = fullData.ToString(),
                                 AccessToken = context.AccessToken
                             });
                         } else
                         {
-                            currentUser.CustomerId = userId;
-                            currentUser.FullName = fullName;
-                            currentUser.ProfilePicUrl = gravatar;
-                            currentUser.Data = fullData.ToString();
-                            currentUser.AccessToken = context.AccessToken;
+                            // update currentUser from database
+                            BCAP.CurrentCustomer.Remove(currentUser);
+
+                            BCAP.CurrentCustomer.Add(new CurrentCustomer
+                            {
+                                CustomerId = userId,
+                                FullName = fullName,
+                                ProfilePicUrl = gravatar,
+                                Data = fullData.ToString(),
+                                AccessToken = context.AccessToken
+                            });
+
+                            // previous update currentUser code, throwing CustomerId key exception on user change
+                            //currentUser.CustomerId = userId;
+                            //currentUser.FullName = fullName;
+                            //currentUser.ProfilePicUrl = gravatar;
+                            //currentUser.Data = fullData.ToString();
+                            //currentUser.AccessToken = context.AccessToken;
                         }
                         BCAP.SaveChanges();
                         // angular starts with GET request to currentUser table for user info
