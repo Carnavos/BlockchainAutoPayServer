@@ -99,7 +99,7 @@ namespace BlockchainAutoPay
 
                 // Scope set to just user info for now
                 // scope=user%20addresses%20balance%20buttons%20contacts%20recurring_payments%20transactions
-                Scope = { "user", "addresses", "balance", "contacts", "recurring_payments", "transactions", "wallet:accounts:read", "wallet:transactions:read", "wallet:transactions:send:bypass-2fa" },
+                Scope = { "user", "addresses", "balance", "contacts", "recurring_payments", "transactions", "wallet:accounts:read", "wallet:transactions:read", "wallet:transactions:send:bypass-2fa", "wallet:transactions:send" },
 
                 Events = new OAuthEvents
                 {
