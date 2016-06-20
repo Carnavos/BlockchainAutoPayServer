@@ -211,6 +211,18 @@ namespace BlockchainAutoPay
             {
                 builder.Run(async context =>
                 {
+                    // logout clear of current customer in BCAP database
+                    // import database context
+                    var optionsBuilder = new DbContextOptionsBuilder<BCAPContext>();
+                    optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=BCAPDB;Trusted_Connection=True;");
+                    BCAPContext BCAP = new BCAPContext(optionsBuilder.Options);
+
+                    // define and clear current customer
+                    var currentUser = BCAP.CurrentCustomer.FirstOrDefault();
+                    BCAP.CurrentCustomer.Remove(currentUser);
+                    BCAP.SaveChanges();
+
+
                     // Sign the user out of the authentication middleware (i.e. it will clear the Auth cookie)
                     await context.Authentication.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
