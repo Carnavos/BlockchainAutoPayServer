@@ -152,7 +152,7 @@ namespace BlockchainAutoPay
                         {
                             // update currentUser from database
                             BCAP.CurrentCustomer.Remove(currentUser);
-
+                            BCAP.SaveChanges();
                             BCAP.CurrentCustomer.Add(new CurrentCustomer
                             {
                                 CustomerId = userId,
@@ -215,7 +215,8 @@ namespace BlockchainAutoPay
                     await context.Authentication.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
                     // Redirect the user to the home page after signing out
-                    context.Response.Redirect("/");
+                    // context.Response.Redirect("/");
+                    context.Response.Redirect("http://localhost:8080/#/register");
                 });
             });
 
