@@ -98,8 +98,8 @@ namespace BlockchainAutoPay
                 // in the example, this was written like: "https://sandbox.coinbase.com/v2/user/(id,name,username)" to store fields as "claims"
 
                 // Scope set to just user info for now
-                // scope=user%20addresses%20balance%20buttons%20contacts%20recurring_payments%20transactions
-                Scope = { "user", "addresses", "balance", "contacts", "recurring_payments", "transactions", "wallet:accounts:read" },
+                // additional scopes needed for live money send { "meta[send_limit_amount]=1", "eta[send_limit_currency]=USD", "meta[send_limit_period]=day" }
+                Scope = { "user", "addresses", "balance", "contacts", "recurring_payments", "transactions", "wallet:accounts:read", "wallet:transactions:read", "wallet:transactions:send:bypass-2fa", "wallet:transactions:send" },
 
                 Events = new OAuthEvents
                 {
