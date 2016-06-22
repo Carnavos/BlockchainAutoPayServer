@@ -91,15 +91,18 @@ namespace BlockchainAutoPay
                 CallbackPath = new PathString("/signin-coinbase"),
 
 
-                AuthorizationEndpoint = "https://sandbox.coinbase.com/oauth/authorize",
-                TokenEndpoint = "https://sandbox.coinbase.com/oauth/token",
+                AuthorizationEndpoint = "https://www.coinbase.com/oauth/authorize",
+                TokenEndpoint = "https://api.coinbase.com/oauth/token",
                 // the URL accessed used after user authenticated, used to store user object
-                UserInformationEndpoint = "https://api.sandbox.coinbase.com/v2/user",
+                UserInformationEndpoint = "https://api.coinbase.com/v2/user",
                 // in the example, this was written like: "https://sandbox.coinbase.com/v2/user/(id,name,username)" to store fields as "claims"
 
-                // Scope set to just user info for now
+                // SCOPE
                 // additional scopes needed for live money send { "meta[send_limit_amount]=1", "eta[send_limit_currency]=USD", "meta[send_limit_period]=day" }
-                Scope = { "user", "addresses", "balance", "contacts", "recurring_payments", "transactions", "wallet:accounts:read", "wallet:transactions:read", "wallet:transactions:send:bypass-2fa", "wallet:transactions:send" },
+                // Scope = { "user", "addresses", "balance", "contacts", "recurring_payments", "transactions", "wallet:accounts:read", "wallet:transactions:read", "wallet:transactions:send:bypass-2fa", "wallet:transactions:send", "meta[send_limit_amount]=10", "eta[send_limit_currency]=USD", "meta[send_limit_period]=day" },
+                Scope = { "wallet:accounts:read", "wallet:transactions:read", "wallet:transactions:send" },
+                // Scope = { "wallet:accounts:read", "wallet:transactions:read" },
+
 
                 Events = new OAuthEvents
                 {
@@ -108,7 +111,7 @@ namespace BlockchainAutoPay
                     // parse the resulting JSON to extract the relevant information, and add the correct claims.
                     OnCreatingTicket = async context =>
                     {
-                        // Retrieve user info
+                        // Retrieve user info from Coinbase after successful authentication
                         var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
                         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
                         request.Headers.Add("x-li-format", "json"); // Tell Coinbase we want the result in JSON, otherwise it will return XML
@@ -161,19 +164,9 @@ namespace BlockchainAutoPay
                                 Data = fullData.ToString(),
                                 AccessToken = context.AccessToken
                             });
-
-                            // previous update currentUser code, throwing CustomerId key exception on user change
-                            //currentUser.CustomerId = userId;
-                            //currentUser.FullName = fullName;
-                            //currentUser.ProfilePicUrl = gravatar;
-                            //currentUser.Data = fullData.ToString();
-                            //currentUser.AccessToken = context.AccessToken;
                         }
                         BCAP.SaveChanges();
-                        // angular starts with GET request to currentUser table for user info
 
-
-                        // Placeholder "Claim" section
                         // Add the Name Identifier claim
                         if (!string.IsNullOrEmpty(userId))
                         {
@@ -190,6 +183,16 @@ namespace BlockchainAutoPay
 
                         context.Identity.AddClaim(new Claim("urn:token:coinbase", context.AccessToken));
 
+                    },
+
+                    OnRedirectToAuthorizationEndpoint = context =>
+                    
+                    {
+                        // metaTags required by coinbase (in tandem with Scope parameter) to allow transactions
+                        var metaTags = "&meta%5Bsend_limit_amount%5D=1&meta%5Bsend_limit_currency%5D=USD&meta%5Bsend_limit_period%5D=day";
+                        var newUri = context.RedirectUri + metaTags;
+                        context.Response.Redirect(newUri);
+                        return Task.FromResult(0);
                     }
                 }
 
